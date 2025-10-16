@@ -59,3 +59,5 @@ Thumbs.db
 # Package files
 *.tgz
 *.tar.gz
+
+*/domain-class-generation
