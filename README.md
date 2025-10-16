@@ -1,1 +1,0 @@
-# vital-model-utils-ts
