@@ -281,15 +281,15 @@ export class VitalSignsJsonlProcessor {
     }
 
     // Add to appropriate nodes or edges collection
-    if (instance.uri) {
+    if (instance.URI) {
       if (instance instanceof VITAL_Edge_Base || instance instanceof VITAL_HyperEdge_Base) {
-        graphInstance.edges.set(instance.uri, instance as VITAL_Edge_Base | VITAL_HyperEdge_Base);
+        graphInstance.edges.set(instance.URI, instance as VITAL_Edge_Base | VITAL_HyperEdge_Base);
       } else if (
         instance instanceof VITAL_Node_Base || 
         instance instanceof VITAL_HyperNode_Base || 
         instance instanceof VITAL_GraphContainerObject_Base
       ) {
-        graphInstance.nodes.set(instance.uri, instance as VITAL_Node_Base | VITAL_HyperNode_Base | VITAL_GraphContainerObject_Base);
+        graphInstance.nodes.set(instance.URI, instance as VITAL_Node_Base | VITAL_HyperNode_Base | VITAL_GraphContainerObject_Base);
       }
     }
   }
@@ -333,7 +333,7 @@ class GenericVitalSignsObject extends VitalSignsObject {
 
   constructor(uri: string, vitaltype: string, data: Record<string, any>) {
     super();
-    this.uri = uri;
+    this.URI = uri;
     this.vitaltype = vitaltype;
     this.data = data;
   }

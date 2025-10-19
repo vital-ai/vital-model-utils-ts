@@ -70,8 +70,8 @@ export class VitalSignsConverter {
     } as JsonLDObject;
 
     // Add @id if URI exists
-    if (instance.uri) {
-      jsonLD['@id'] = instance.uri;
+    if (instance.URI) {
+      jsonLD['@id'] = instance.URI;
     }
 
     // Convert other properties
@@ -91,7 +91,7 @@ export class VitalSignsConverter {
    */
   static fromJsonMapList<T extends VitalSignsObject>(
     jsonMapList: Map<string, any>[],
-    ClassConstructor: new (uri: string, vitaltype: string, ...args: any[]) => T
+    ClassConstructor: new (URI: string, vitaltype: string, ...args: any[]) => T
   ): T[] {
     const instances: T[] = [];
     for (const jsonMap of jsonMapList) {

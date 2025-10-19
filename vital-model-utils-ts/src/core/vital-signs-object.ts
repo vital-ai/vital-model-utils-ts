@@ -13,7 +13,7 @@ export interface VitalSignsPropertyDefinition {
  * Base VitalSigns Object - common ancestor for all VitalSigns classes
  */
 export abstract class VitalSignsObject {
-  public uri?: string;
+  public URI?: string;
   public vitaltype?: string;
   public timestamp?: number;
   public active?: boolean;
@@ -75,6 +75,15 @@ export abstract class VitalSignsObject {
     //   json['@id'] = this.uri;
     //}
 
+     if (this.URI) {
+       json['URI'] = this.URI;
+    }
+
+    if (this.vitaltype) {
+      json['type'] = this.vitaltype;
+      json['types'] = [this.vitaltype];
+    }
+
     // Get all property definitions including inherited ones
     const allProperties = this.getAllPropertyDefinitions();
 
@@ -119,8 +128,8 @@ export abstract class VitalSignsObject {
     map.set('http://vital.ai/ontology/vital-core#vitaltype', this.vitaltype);
     
     // Add URI if present
-    if (this.uri) {
-      map.set('@id', this.uri);
+    if (this.URI) {
+      map.set('@id', this.URI);
     }
 
     // Get all property definitions including inherited ones
@@ -158,7 +167,7 @@ export abstract class VitalSignsObject {
 
     // Set URI if present
     if (map.has('@id')) {
-      this.uri = map.get('@id');
+      this.URI = map.get('@id');
     }
   }
 }

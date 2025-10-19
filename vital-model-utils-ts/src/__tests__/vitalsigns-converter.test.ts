@@ -5,7 +5,7 @@ import { VitalSignsObject, VitalSignsPropertyDefinition } from '../core/vital-si
 class TestVitalSignsObject extends VitalSignsObject {
   constructor(uri: string, vitaltype: string) {
     super();
-    this.uri = uri;
+    this.URI = uri;
     this.vitaltype = vitaltype;
   }
 
@@ -86,7 +86,7 @@ describe('VitalSignsConverter', () => {
       const result = VitalSignsConverter.toInstance(jsonLD, TestVitalSignsObject);
       
       expect(result.instance).toBeInstanceOf(TestVitalSignsObject);
-      expect(result.instance.uri).toBe('http://example.com/test');
+      expect(result.instance.URI).toBe('http://example.com/test');
       expect(result.instance.vitaltype).toBe('http://vital.ai/ontology/test#TestClass');
       expect(result.warnings).toEqual([]);
     });

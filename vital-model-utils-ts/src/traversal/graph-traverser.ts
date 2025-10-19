@@ -194,18 +194,18 @@ export class VitalSignsGraphTraverser {
     const visited = new Set<string>();
 
     const processHyperEdge = (hyperEdge: VITAL_HyperEdge_Base): void => {
-      if (!hyperEdge.uri || visited.has(hyperEdge.uri)) {
+      if (!hyperEdge.URI || visited.has(hyperEdge.URI)) {
         return;
       }
 
-      visited.add(hyperEdge.uri);
+      visited.add(hyperEdge.URI);
       result.push(hyperEdge);
 
       // Follow to destination
       if (hyperEdge.hyperEdgeDestination) {
         const destNode = this.graph.nodes.get(hyperEdge.hyperEdgeDestination);
-        if (destNode && destNode.uri && !visited.has(destNode.uri)) {
-          visited.add(destNode.uri);
+        if (destNode && destNode.URI && !visited.has(destNode.URI)) {
+          visited.add(destNode.URI);
           result.push(destNode);
         }
       }
@@ -213,8 +213,8 @@ export class VitalSignsGraphTraverser {
       // Follow to hyper-destination if exists
       if (hyperEdge.hyperEdgeDestination) {
         const hyperDestNode = this.graph.nodes.get(hyperEdge.hyperEdgeDestination);
-        if (hyperDestNode && hyperDestNode.uri && !visited.has(hyperDestNode.uri)) {
-          visited.add(hyperDestNode.uri);
+        if (hyperDestNode && hyperDestNode.URI && !visited.has(hyperDestNode.URI)) {
+          visited.add(hyperDestNode.URI);
           result.push(hyperDestNode);
         }
       }
