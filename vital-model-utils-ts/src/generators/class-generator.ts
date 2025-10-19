@@ -55,14 +55,14 @@ ${additionalMethods}
         
         if (currentOntology === baseOntology) {
           // Same ontology - relative import
-          imports.push(`import { ${classDef.baseClass} } from './${VitalSignsHelpers.toFileName(classDef.baseClass)}.js';`);
+          imports.push(`import { ${classDef.baseClass} } from './${VitalSignsHelpers.toFileName(classDef.baseClass)}';`);
         } else {
           // Different ontology - cross-ontology import
-          imports.push(`import { ${classDef.baseClass} } from '../${baseOntology}/${VitalSignsHelpers.toFileName(classDef.baseClass)}.js';`);
+          imports.push(`import { ${classDef.baseClass} } from '../${baseOntology}/${VitalSignsHelpers.toFileName(classDef.baseClass)}';`);
         }
       } else {
         // Fallback to same directory
-        imports.push(`import { ${classDef.baseClass} } from './${VitalSignsHelpers.toFileName(classDef.baseClass)}.js';`);
+        imports.push(`import { ${classDef.baseClass} } from './${VitalSignsHelpers.toFileName(classDef.baseClass)}';`);
       }
       imports.push(`import { VitalSignsPropertyDefinition } from '@vital-ai/vital-model-utils';`);
     }
@@ -318,7 +318,7 @@ ${properties}
 
       const exports = classes.map(classDef => {
         const fileName = VitalSignsHelpers.toFileName(classDef.className);
-        return `export { ${classDef.className} } from './${fileName}.js';`;
+        return `export { ${classDef.className} } from './${fileName}';`;
       }).join('\n');
 
       // Get ontology name for better description
@@ -345,7 +345,7 @@ ${exports}
   ): Promise<void> {
     const exports = Object.keys(structure)
       .filter(dir => structure[dir].length > 0)
-      .map(dir => `export * from './${dir}/index.js';`)
+      .map(dir => `export * from './${dir}/index';`)
       .join('\n');
 
     const indexContent = `// ${domainName} Schema Classes

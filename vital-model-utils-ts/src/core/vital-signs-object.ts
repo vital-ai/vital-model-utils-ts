@@ -71,9 +71,9 @@ export abstract class VitalSignsObject {
     };
 
     // Add URI if present (using @id for JSON-LD compatibility)
-    if (this.uri) {
-      json['@id'] = this.uri;
-    }
+    // if (this.uri) {
+    //   json['@id'] = this.uri;
+    //}
 
     // Get all property definitions including inherited ones
     const allProperties = this.getAllPropertyDefinitions();
