@@ -1,6 +1,6 @@
 {
   "name": "@vital-ai/vital-model-utils",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "TypeScript utilities for VitalSigns ontology - generate type-safe classes, convert JSON-LD, traverse knowledge graphs, and integrate with REST APIs",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",
