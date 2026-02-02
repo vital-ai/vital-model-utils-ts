@@ -98,24 +98,38 @@ export class VitalSignsSchemaParser {
   private static extractProperties(classDef: JSONSchema): PropertyMapping[] {
     const properties: PropertyMapping[] = [];
 
-    if (!classDef.allOf) {
-      return properties;
+    // Extract properties defined directly on the class (for base classes like VITAL_Node)
+    if (classDef.properties) {
+      for (const [propertyURI, propDef] of Object.entries(classDef.properties)) {
+        const property: PropertyMapping = {
+          propertyURI,
+          tsPropertyName: propDef.tsPropertyName || this.uriToPropertyName(propertyURI),
+          type: this.mapJsonSchemaType(propDef),
+          ...(propDef.format && { format: propDef.format }),
+          ...(propDef.description && { description: propDef.description }),
+          ...(propDef.unionTypes && { unionTypes: propDef.unionTypes }),
+          required: false // Default to optional, can be determined from schema
+        };
+        properties.push(property);
+      }
     }
 
-    // Extract properties from allOf array
-    for (const item of classDef.allOf) {
-      if (item.properties) {
-        for (const [propertyURI, propDef] of Object.entries(item.properties)) {
-          const property: PropertyMapping = {
-            propertyURI,
-            tsPropertyName: propDef.tsPropertyName || this.uriToPropertyName(propertyURI),
-            type: this.mapJsonSchemaType(propDef),
-            ...(propDef.format && { format: propDef.format }),
-            ...(propDef.description && { description: propDef.description }),
-            ...(propDef.unionTypes && { unionTypes: propDef.unionTypes }),
-            required: false // Default to optional, can be determined from schema
-          };
-          properties.push(property);
+    // Extract properties from allOf array (for derived classes)
+    if (classDef.allOf) {
+      for (const item of classDef.allOf) {
+        if (item.properties) {
+          for (const [propertyURI, propDef] of Object.entries(item.properties)) {
+            const property: PropertyMapping = {
+              propertyURI,
+              tsPropertyName: propDef.tsPropertyName || this.uriToPropertyName(propertyURI),
+              type: this.mapJsonSchemaType(propDef),
+              ...(propDef.format && { format: propDef.format }),
+              ...(propDef.description && { description: propDef.description }),
+              ...(propDef.unionTypes && { unionTypes: propDef.unionTypes }),
+              required: false // Default to optional, can be determined from schema
+            };
+            properties.push(property);
+          }
         }
       }
     }

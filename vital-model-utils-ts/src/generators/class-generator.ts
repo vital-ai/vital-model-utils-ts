@@ -218,13 +218,19 @@ ${properties}
    * Check if a property should use declare modifier to avoid inheritance conflicts
    */
   private static shouldDeclareProperty(prop: PropertyMapping, _classDef: VitalSignsClassDefinition): boolean {
-    // Common properties that might conflict with base classes
+    // Properties already defined in VitalSignsObject base class
+    const baseClassProperties = [
+      'URI', 'vitaltype', 'timestamp', 'active'
+    ];
+    
+    // Other common properties that might conflict with base classes
     const commonConflictProperties = [
       'loginURI', 'recipient', 'geolocation', 'memberURIs', 
       'accessGrantMemberURIs', 'haleySetMemberURIs'
     ];
     
-    return commonConflictProperties.includes(prop.tsPropertyName);
+    return baseClassProperties.includes(prop.tsPropertyName) || 
+           commonConflictProperties.includes(prop.tsPropertyName);
   }
 
   /**
