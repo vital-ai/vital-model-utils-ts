@@ -51,6 +51,10 @@ vscode/
 ehthumbs.db
 Thumbs.db
 
+# Environment files
+.env
+*/.env
+
 # Temporary files
 *.tmp
 *.temp
