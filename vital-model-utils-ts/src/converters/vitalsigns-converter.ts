@@ -1,21 +1,20 @@
 import { VitalSignsObject } from '../core/vital-signs-object.js';
 import { 
-  JsonLDObject, 
   VitalSignsJsonObject, 
   ConversionResult
 } from '../types/graph.types.js';
 import { JSONSchema } from '../types/schema.types.js';
 
 /**
- * VitalSigns JSON-LD to Instance Converter
+ * VitalSigns JSON to Instance Converter
  */
 export class VitalSignsConverter {
   
   /**
-   * Convert JSON-LD or VitalSigns JSON to instance
+   * Convert VitalSigns JSON to instance
    */
   static toInstance<T extends VitalSignsObject>(
-    jsonData: JsonLDObject | VitalSignsJsonObject | Record<string, any>, 
+    jsonData: VitalSignsJsonObject | Record<string, any>, 
     ClassConstructor: new (uri: string, vitaltype: string, ...args: any[]) => T,
     _schema?: JSONSchema
   ): ConversionResult<T> {
@@ -60,30 +59,6 @@ export class VitalSignsConverter {
     return instance.toJSON() as VitalSignsJsonObject;
   }
 
-  /**
-   * Convert instance to JSON-LD format
-   */
-  static toJsonLD(instance: VitalSignsObject): JsonLDObject {
-    const json = instance.toJSON();
-    const jsonLD: JsonLDObject = {
-      '@type': json['http://vital.ai/ontology/vital-core#vitaltype']
-    } as JsonLDObject;
-
-    // Add @id if URI exists
-    if (instance.URI) {
-      jsonLD['@id'] = instance.URI;
-    }
-
-    // Convert other properties
-    for (const [key, value] of Object.entries(json)) {
-      if (key !== 'http://vital.ai/ontology/vital-core#vitaltype' && value !== undefined) {
-        jsonLD[key] = value;
-      }
-    }
-
-    return jsonLD;
-  }
-
 
 
   /**
@@ -115,17 +90,17 @@ export class VitalSignsConverter {
 
 
   /**
-   * Auto-detect type from @type or vitaltype property
+   * Auto-detect type from type or vitaltype property
    */
   static autoDetectType(jsonData: Record<string, any>): string | null {
-    // Check for JSON-LD @type
-    if (jsonData['@type']) {
-      return jsonData['@type'];
-    }
-
-    // Check for VitalSigns vitaltype
+    // Check for full URI vitaltype key
     if (jsonData['http://vital.ai/ontology/vital-core#vitaltype']) {
       return jsonData['http://vital.ai/ontology/vital-core#vitaltype'];
+    }
+
+    // Check for short type key
+    if (jsonData['type']) {
+      return jsonData['type'];
     }
 
     return null;
@@ -151,61 +126,6 @@ export class VitalSignsConverter {
     }
 
     return true;
-  }
-
-  /**
-   * Convert JSON-LD to VitalSigns JSON format
-   */
-  static fromJsonLD(jsonLD: JsonLDObject): VitalSignsJsonObject {
-    const vitalSignsJson: VitalSignsJsonObject = {
-      'http://vital.ai/ontology/vital-core#vitaltype': jsonLD['@type']
-    };
-
-    // Convert other properties
-    for (const [key, value] of Object.entries(jsonLD)) {
-      if (key !== '@id' && key !== '@type') {
-        vitalSignsJson[key] = this.normalizePropertyValue(value);
-      }
-    }
-
-    return vitalSignsJson;
-  }
-
-  /**
-   * Convert VitalSigns JSON to JSON-LD format
-   */
-  static vitalSignsJsonToJsonLD(vitalSignsJson: VitalSignsJsonObject, uri?: string): JsonLDObject {
-    const jsonLD: JsonLDObject = {
-      '@type': vitalSignsJson['http://vital.ai/ontology/vital-core#vitaltype']
-    } as JsonLDObject;
-
-    // Set @id if provided or try to extract from data
-    if (uri) {
-      jsonLD['@id'] = uri;
-    }
-
-    // Convert other properties
-    for (const [key, value] of Object.entries(vitalSignsJson)) {
-      if (key !== 'http://vital.ai/ontology/vital-core#vitaltype') {
-        jsonLD[key] = value;
-      }
-    }
-
-    return jsonLD;
-  }
-
-  /**
-   * Handle @id/@type mapping to uri/vitaltype
-   */
-  static mapJsonLDToVitalSigns(jsonLD: JsonLDObject): VitalSignsJsonObject {
-    return this.fromJsonLD(jsonLD);
-  }
-
-  /**
-   * Handle uri/vitaltype mapping to @id/@type
-   */
-  static mapVitalSignsToJsonLD(vitalSigns: VitalSignsJsonObject, uri?: string): JsonLDObject {
-    return this.vitalSignsJsonToJsonLD(vitalSigns, uri);
   }
 
   /**
@@ -257,7 +177,7 @@ export class VitalSignsConverter {
   }
 
   /**
-   * Handle array property values (JSON-LD can have single values as arrays)
+   * Normalize property values (unwrap single-element arrays)
    */
   static normalizePropertyValues(json: Record<string, any>): Record<string, any> {
     const normalized: Record<string, any> = {};
@@ -281,33 +201,31 @@ export class VitalSignsConverter {
   }
 
   /**
-   * Normalize JSON-LD or VitalSigns JSON to standard VitalSigns format
+   * Normalize VitalSigns JSON to standard internal format (full URI keys)
    */
   private static normalizeToVitalSignsJson(jsonData: Record<string, any>): VitalSignsJsonObject {
-    // If it's already VitalSigns JSON format
+    // If it already has the full URI vitaltype key
     if (jsonData['http://vital.ai/ontology/vital-core#vitaltype']) {
       return this.normalizePropertyValues(jsonData) as VitalSignsJsonObject;
     }
 
-    // If it's JSON-LD format
-    if (jsonData['@type']) {
-      return this.fromJsonLD(jsonData as JsonLDObject);
+    // If it has the short type key, map to full URI key
+    if (jsonData['type']) {
+      const normalized: Record<string, any> = { ...jsonData };
+      normalized['http://vital.ai/ontology/vital-core#vitaltype'] = jsonData['type'];
+      return this.normalizePropertyValues(normalized) as VitalSignsJsonObject;
     }
 
-    throw new Error('Unrecognized JSON format - must be JSON-LD or VitalSigns JSON');
+    throw new Error('Unrecognized JSON format - must have type or http://vital.ai/ontology/vital-core#vitaltype');
   }
 
   /**
    * Extract URI from JSON data
    */
   private static extractURI(jsonData: Record<string, any>): string | null {
-    // JSON-LD format
-    if (jsonData['@id']) {
-      return jsonData['@id'];
+    if (jsonData['URI']) {
+      return jsonData['URI'];
     }
-
-    // VitalSigns format might not have explicit URI in JSON
-    // In that case, URI should be provided separately or generated
     return null;
   }
 
@@ -315,14 +233,14 @@ export class VitalSignsConverter {
    * Extract vitaltype from JSON data
    */
   private static extractVitalType(jsonData: Record<string, any>): string | null {
-    // JSON-LD format
-    if (jsonData['@type']) {
-      return jsonData['@type'];
-    }
-
-    // VitalSigns format
+    // Full URI key
     if (jsonData['http://vital.ai/ontology/vital-core#vitaltype']) {
       return jsonData['http://vital.ai/ontology/vital-core#vitaltype'];
+    }
+
+    // Short type key
+    if (jsonData['type']) {
+      return jsonData['type'];
     }
 
     return null;

@@ -10,12 +10,11 @@ import { VitalSignsConverter } from './vitalsigns-converter.js';
 import {
   VitalSignsClassRegistry,
   ProcessingStats,
-  JsonLDObject,
   VitalSignsGraphInstance
 } from '../types/graph.types.js';
 
 /**
- * VitalSigns JSON-LD JSONL Processor
+ * VitalSigns JSONL Processor
  */
 export class VitalSignsJsonlProcessor {
 
@@ -137,9 +136,43 @@ export class VitalSignsJsonlProcessor {
   }
 
   /**
-   * Process JSON-LD file (like instances.jsonl)
+   * Process an in-memory array of JSON objects with class registry
    */
-  static async processJsonLDFile(
+  static processObjects(
+    jsonObjects: Record<string, any>[],
+    classRegistry: VitalSignsClassRegistry
+  ): VitalSignsGraphInstance {
+    const graphInstance: VitalSignsGraphInstance = {
+      nodes: new Map(),
+      edges: new Map(),
+      objectsByType: new Map()
+    };
+
+    for (const jsonData of jsonObjects) {
+      try {
+        const vitalType = VitalSignsConverter.autoDetectType(jsonData);
+        if (!vitalType) continue;
+
+        const ClassConstructor = classRegistry.get(vitalType);
+        if (!ClassConstructor) continue;
+
+        const uri = this.extractURI(jsonData);
+        if (!uri) continue;
+
+        const result = VitalSignsConverter.toInstance(jsonData, ClassConstructor);
+        this.addToGraphInstance(graphInstance, result.instance);
+      } catch (error) {
+        console.warn(`Error processing object: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
+
+    return graphInstance;
+  }
+
+  /**
+   * Process instances file (like instances.jsonl) with generic objects
+   */
+  static async processInstancesFile(
     filePath: string
   ): Promise<VitalSignsGraphInstance> {
     const graphInstance: VitalSignsGraphInstance = {
@@ -158,62 +191,25 @@ export class VitalSignsJsonlProcessor {
       for await (const line of rl) {
         if (line.trim()) {
           try {
-            const jsonLD = JSON.parse(line) as JsonLDObject;
+            const jsonData = JSON.parse(line) as Record<string, any>;
             
-            if (!jsonLD['@id'] || !jsonLD['@type']) {
+            if (!jsonData['URI'] || !jsonData['type']) {
               continue;
             }
 
             // Create a generic VitalSigns object for enumeration instances
-            const instance = this.createGenericInstance(jsonLD);
+            const instance = this.createGenericInstance(jsonData);
             this.addToGraphInstance(graphInstance, instance);
 
           } catch (error) {
-            console.warn(`Error processing JSON-LD line: ${error instanceof Error ? error.message : String(error)}`);
+            console.warn(`Error processing line: ${error instanceof Error ? error.message : String(error)}`);
           }
         }
       }
 
       return graphInstance;
     } catch (error) {
-      throw new Error(`Failed to process JSON-LD file: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-
-  /**
-   * Process file with auto-detection of format
-   */
-  static async processFileWithAutoDetection(
-    filePath: string,
-    format?: 'json-ld' | 'vitalsigns' | 'auto'
-  ): Promise<VitalSignsGraphInstance> {
-    if (format === 'json-ld') {
-      return this.processJsonLDFile(filePath);
-    }
-
-    // Auto-detect format by reading first line
-    const firstLine = await this.readFirstLine(filePath);
-    if (!firstLine) {
-      throw new Error('Empty file or unable to read first line');
-    }
-
-    try {
-      const jsonData = JSON.parse(firstLine);
-      
-      // Check if it's JSON-LD format
-      if (jsonData['@id'] && jsonData['@type']) {
-        return this.processJsonLDFile(filePath);
-      }
-      
-      // Check if it's VitalSigns format
-      if (jsonData['http://vital.ai/ontology/vital-core#vitaltype']) {
-        // Would need class registry for full processing
-        throw new Error('VitalSigns format requires class registry - use processFile() instead');
-      }
-
-      throw new Error('Unrecognized JSON format');
-    } catch (error) {
-      throw new Error(`Auto-detection failed: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(`Failed to process instances file: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -235,14 +231,14 @@ export class VitalSignsJsonlProcessor {
       for await (const line of rl) {
         if (line.trim()) {
           try {
-            const jsonLD = JSON.parse(line) as JsonLDObject;
+            const jsonData = JSON.parse(line) as Record<string, any>;
             
-            if (!jsonLD['@id'] || !jsonLD['@type']) {
+            if (!jsonData['URI'] || !jsonData['type']) {
               continue;
             }
 
-            const instance = this.createGenericInstance(jsonLD);
-            instances.set(jsonLD['@id'], instance);
+            const instance = this.createGenericInstance(jsonData);
+            instances.set(jsonData['URI'], instance);
 
           } catch (error) {
             console.warn(`Error processing enumeration line: ${error instanceof Error ? error.message : String(error)}`);
@@ -260,17 +256,16 @@ export class VitalSignsJsonlProcessor {
    * Extract URI from JSON data
    */
   private static extractURI(jsonData: Record<string, any>): string | null {
-    if (jsonData['@id']) {
-      return jsonData['@id'];
+    if (jsonData['URI']) {
+      return jsonData['URI'];
     }
-    // For VitalSigns format, URI might need to be generated or provided separately
     return null;
   }
 
   /**
    * Add instance to appropriate collection in graph instance
    */
-  private static addToGraphInstance(graphInstance: VitalSignsGraphInstance, instance: VitalSignsObject): void {
+  static addToGraphInstance(graphInstance: VitalSignsGraphInstance, instance: VitalSignsObject): void {
     // Add to objectsByType map
     const vitalType = instance.vitaltype;
     if (vitalType && !graphInstance.objectsByType.has(vitalType)) {
@@ -297,32 +292,10 @@ export class VitalSignsJsonlProcessor {
   /**
    * Create a generic VitalSigns instance for enumeration objects
    */
-  private static createGenericInstance(jsonLD: JsonLDObject): VitalSignsObject {
-    return new GenericVitalSignsObject(jsonLD['@id'], jsonLD['@type'], jsonLD);
+  private static createGenericInstance(jsonData: Record<string, any>): VitalSignsObject {
+    return new GenericVitalSignsObject(jsonData['URI'], jsonData['type'], jsonData);
   }
 
-  /**
-   * Read first line of file for format detection
-   */
-  private static async readFirstLine(filePath: string): Promise<string | null> {
-    return new Promise((resolve, reject) => {
-      const stream = fs.createReadStream(filePath);
-      const rl = readline.createInterface({ input: stream });
-      
-      rl.on('line', (line) => {
-        rl.close();
-        resolve(line);
-      });
-      
-      rl.on('close', () => {
-        resolve(null);
-      });
-      
-      rl.on('error', (error) => {
-        reject(error);
-      });
-    });
-  }
 }
 
 /**
@@ -342,7 +315,7 @@ class GenericVitalSignsObject extends VitalSignsObject {
     // Generate property definitions from the data
     const properties = [];
     for (const [key, value] of Object.entries(this.data)) {
-      if (key !== '@id' && key !== '@type') {
+      if (key !== 'URI' && key !== 'type' && key !== 'types') {
         properties.push({
           propertyURI: key,
           tsPropertyName: key.split('#').pop() || key,

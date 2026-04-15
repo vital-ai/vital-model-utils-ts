@@ -81,39 +81,6 @@ export class VitalSignsValidation {
   }
 
   /**
-   * Validate JSON-LD object structure
-   */
-  static validateJsonLD(obj: any): { valid: boolean; errors: string[] } {
-    const errors: string[] = [];
-
-    if (typeof obj !== 'object' || obj === null) {
-      errors.push('Object must be a non-null object');
-      return { valid: false, errors };
-    }
-
-    if (!obj['@id']) {
-      errors.push('Missing @id field');
-    } else if (typeof obj['@id'] !== 'string') {
-      errors.push('@id must be a string');
-    } else if (!this.isValidURI(obj['@id'])) {
-      errors.push('@id must be a valid URI');
-    }
-
-    if (!obj['@type']) {
-      errors.push('Missing @type field');
-    } else if (typeof obj['@type'] !== 'string') {
-      errors.push('@type must be a string');
-    } else if (!this.isValidVitalType(obj['@type'])) {
-      errors.push('@type must be a valid VitalSigns type URI');
-    }
-
-    return {
-      valid: errors.length === 0,
-      errors
-    };
-  }
-
-  /**
    * Validate VitalSigns JSON object structure
    */
   static validateVitalSignsJson(obj: any): { valid: boolean; errors: string[] } {
@@ -124,13 +91,23 @@ export class VitalSignsValidation {
       return { valid: false, errors };
     }
 
-    const vitalTypeKey = 'http://vital.ai/ontology/vital-core#vitaltype';
-    if (!obj[vitalTypeKey]) {
-      errors.push(`Missing ${vitalTypeKey} field`);
-    } else if (typeof obj[vitalTypeKey] !== 'string') {
-      errors.push(`${vitalTypeKey} must be a string`);
-    } else if (!this.isValidVitalType(obj[vitalTypeKey])) {
-      errors.push(`${vitalTypeKey} must be a valid VitalSigns type URI`);
+    // Validate URI field
+    if (!obj['URI']) {
+      errors.push('Missing URI field');
+    } else if (typeof obj['URI'] !== 'string') {
+      errors.push('URI must be a string');
+    } else if (!this.isValidURI(obj['URI'])) {
+      errors.push('URI must be a valid URI');
+    }
+
+    // Validate type field (short key or full URI key)
+    const vitaltype = obj['type'] || obj['http://vital.ai/ontology/vital-core#vitaltype'];
+    if (!vitaltype) {
+      errors.push('Missing type field');
+    } else if (typeof vitaltype !== 'string') {
+      errors.push('type must be a string');
+    } else if (!this.isValidVitalType(vitaltype)) {
+      errors.push('type must be a valid VitalSigns type URI');
     }
 
     return {

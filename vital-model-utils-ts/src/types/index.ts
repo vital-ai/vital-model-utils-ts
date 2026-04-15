@@ -13,7 +13,6 @@ export type {
   VitalSignsGraphInstance,
   VitalSignsTraversalOptions,
   VitalSignsPropertyFilter,
-  JsonLDObject,
   VitalSignsJsonObject,
   ConversionResult,
   TraversalResult,

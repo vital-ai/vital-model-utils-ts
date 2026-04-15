@@ -6,8 +6,10 @@ import { VITAL_HyperEdge_Base } from '../core/vital-hyper-edge-base.js';
 import { VITAL_GraphContainerObject_Base } from '../core/vital-graph-container-object-base.js';
 import {
   VitalSignsGraphInstance,
-  VitalSignsTraversalOptions
+  VitalSignsTraversalOptions,
+  VitalSignsPropertyFilter
 } from '../types/graph.types.js';
+import { VitalSignsFilterEngine } from './filter-engine.js';
 
 /**
  * VitalSigns Graph Traverser
@@ -207,15 +209,13 @@ export class VitalSignsGraphTraverser {
         if (destNode && destNode.URI && !visited.has(destNode.URI)) {
           visited.add(destNode.URI);
           result.push(destNode);
-        }
-      }
 
-      // Follow to hyper-destination if exists
-      if (hyperEdge.hyperEdgeDestination) {
-        const hyperDestNode = this.graph.nodes.get(hyperEdge.hyperEdgeDestination);
-        if (hyperDestNode && hyperDestNode.URI && !visited.has(hyperDestNode.URI)) {
-          visited.add(hyperDestNode.URI);
-          result.push(hyperDestNode);
+          // Recursively follow hyper-edges from destination
+          for (const edge of this.graph.edges.values()) {
+            if (edge instanceof VITAL_HyperEdge_Base && edge.isConnectedTo(destNode.URI)) {
+              processHyperEdge(edge);
+            }
+          }
         }
       }
     };
@@ -313,17 +313,16 @@ export class VitalSignsGraphTraverser {
   private matchesNodeFilters(
     node: VitalSignsObject,
     nodeTypes?: string[],
-    filters?: any[]
+    filters?: VitalSignsPropertyFilter[]
   ): boolean {
     // Check node type filter
     if (nodeTypes && node.vitaltype && !nodeTypes.includes(node.vitaltype)) {
       return false;
     }
 
-    // Check property filters (simplified implementation)
+    // Check property filters via FilterEngine
     if (filters && filters.length > 0) {
-      // TODO: Implement property filtering
-      return true;
+      return VitalSignsFilterEngine.matchesAllFilters(node, filters);
     }
 
     return true;

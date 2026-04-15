@@ -50,7 +50,6 @@ export abstract class VITAL_HyperEdge_Base extends VitalSignsObject {
    */
   connects(sourceURI: string, destinationURI: string): boolean {
     return this.getHyperSource() === sourceURI && this.getHyperDestination() === destinationURI;
-    return this.hyperEdgeSource === sourceURI && this.hyperEdgeDestination === destinationURI;
   }
 
   /**

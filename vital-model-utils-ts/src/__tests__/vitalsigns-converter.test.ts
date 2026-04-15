@@ -18,23 +18,33 @@ class TestVitalSignsObject extends VitalSignsObject {
 
 describe('VitalSignsConverter', () => {
   describe('autoDetectType', () => {
-    it('should detect JSON-LD @type', () => {
-      const jsonLD = {
-        '@id': 'http://example.com/test',
-        '@type': 'http://vital.ai/ontology/test#TestClass'
+    it('should detect short type field', () => {
+      const json = {
+        'URI': 'http://example.com/test',
+        'type': 'http://vital.ai/ontology/test#TestClass'
       };
 
-      const result = VitalSignsConverter.autoDetectType(jsonLD);
+      const result = VitalSignsConverter.autoDetectType(json);
       expect(result).toBe('http://vital.ai/ontology/test#TestClass');
     });
 
-    it('should detect VitalSigns vitaltype', () => {
+    it('should detect full URI vitaltype key', () => {
       const vitalSignsJson = {
         'http://vital.ai/ontology/vital-core#vitaltype': 'http://vital.ai/ontology/test#TestClass'
       };
 
       const result = VitalSignsConverter.autoDetectType(vitalSignsJson);
       expect(result).toBe('http://vital.ai/ontology/test#TestClass');
+    });
+
+    it('should prefer full URI key over short type key', () => {
+      const json = {
+        'http://vital.ai/ontology/vital-core#vitaltype': 'http://vital.ai/ontology/test#FullURI',
+        'type': 'http://vital.ai/ontology/test#ShortType'
+      };
+
+      const result = VitalSignsConverter.autoDetectType(json);
+      expect(result).toBe('http://vital.ai/ontology/test#FullURI');
     });
 
     it('should return null for unrecognized format', () => {
@@ -47,43 +57,14 @@ describe('VitalSignsConverter', () => {
     });
   });
 
-  describe('fromJsonLD', () => {
-    it('should convert JSON-LD to VitalSigns JSON', () => {
-      const jsonLD = {
-        '@id': 'http://example.com/test',
-        '@type': 'http://vital.ai/ontology/test#TestClass',
-        'http://vital.ai/ontology/vital-core#hasName': 'Test Name'
-      };
-
-      const result = VitalSignsConverter.fromJsonLD(jsonLD);
-      
-      expect(result).toEqual({
-        'http://vital.ai/ontology/vital-core#vitaltype': 'http://vital.ai/ontology/test#TestClass',
-        'http://vital.ai/ontology/vital-core#hasName': 'Test Name'
-      });
-    });
-
-    it('should handle array property values', () => {
-      const jsonLD = {
-        '@id': 'http://example.com/test',
-        '@type': 'http://vital.ai/ontology/test#TestClass',
-        'http://www.w3.org/2000/01/rdf-schema#comment': ['Comment 1', 'Comment 2']
-      };
-
-      const result = VitalSignsConverter.fromJsonLD(jsonLD);
-      
-      expect(result['http://www.w3.org/2000/01/rdf-schema#comment']).toEqual(['Comment 1', 'Comment 2']);
-    });
-  });
-
   describe('toInstance', () => {
-    it('should convert JSON-LD to instance', () => {
-      const jsonLD = {
-        '@id': 'http://example.com/test',
-        '@type': 'http://vital.ai/ontology/test#TestClass'
+    it('should convert VitalSigns JSON to instance using short type key', () => {
+      const json = {
+        'URI': 'http://example.com/test',
+        'type': 'http://vital.ai/ontology/test#TestClass'
       };
 
-      const result = VitalSignsConverter.toInstance(jsonLD, TestVitalSignsObject);
+      const result = VitalSignsConverter.toInstance(json, TestVitalSignsObject);
       
       expect(result.instance).toBeInstanceOf(TestVitalSignsObject);
       expect(result.instance.URI).toBe('http://example.com/test');
@@ -91,9 +72,22 @@ describe('VitalSignsConverter', () => {
       expect(result.warnings).toEqual([]);
     });
 
+    it('should convert VitalSigns JSON to instance using full URI key', () => {
+      const json = {
+        'URI': 'http://example.com/test',
+        'http://vital.ai/ontology/vital-core#vitaltype': 'http://vital.ai/ontology/test#TestClass'
+      };
+
+      const result = VitalSignsConverter.toInstance(json, TestVitalSignsObject);
+      
+      expect(result.instance).toBeInstanceOf(TestVitalSignsObject);
+      expect(result.instance.URI).toBe('http://example.com/test');
+      expect(result.instance.vitaltype).toBe('http://vital.ai/ontology/test#TestClass');
+    });
+
     it('should throw error for missing URI', () => {
       const invalidJson = {
-        '@type': 'http://vital.ai/ontology/test#TestClass'
+        'type': 'http://vital.ai/ontology/test#TestClass'
       };
 
       expect(() => {
@@ -103,12 +97,12 @@ describe('VitalSignsConverter', () => {
 
     it('should throw error for missing vitaltype', () => {
       const invalidJson = {
-        '@id': 'http://example.com/test'
+        'URI': 'http://example.com/test'
       };
 
       expect(() => {
         VitalSignsConverter.toInstance(invalidJson, TestVitalSignsObject);
-      }).toThrow('Unrecognized JSON format - must be JSON-LD or VitalSigns JSON');
+      }).toThrow('Unrecognized JSON format');
     });
   });
 

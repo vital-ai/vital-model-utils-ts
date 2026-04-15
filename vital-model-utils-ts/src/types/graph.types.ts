@@ -38,15 +38,6 @@ export interface VitalSignsPropertyFilter {
 }
 
 /**
- * JSON-LD object format
- */
-export interface JsonLDObject {
-  '@id': string;
-  '@type': string;
-  [key: string]: any;
-}
-
-/**
  * VitalSigns JSON object format
  */
 export interface VitalSignsJsonObject {

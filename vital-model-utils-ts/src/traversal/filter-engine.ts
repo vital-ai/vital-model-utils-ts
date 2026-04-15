@@ -156,7 +156,7 @@ export class VitalSignsFilterEngine {
   /**
    * Check if object matches all filters
    */
-  private static matchesAllFilters(
+  static matchesAllFilters(
     obj: VitalSignsObject,
     filters: VitalSignsPropertyFilter[]
   ): boolean {

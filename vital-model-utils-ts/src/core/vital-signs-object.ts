@@ -70,11 +70,6 @@ export abstract class VitalSignsObject {
       'http://vital.ai/ontology/vital-core#vitaltype': this.vitaltype
     };
 
-    // Add URI if present (using @id for JSON-LD compatibility)
-    // if (this.uri) {
-    //   json['@id'] = this.uri;
-    //}
-
      if (this.URI) {
        json['URI'] = this.URI;
     }
@@ -112,9 +107,16 @@ export abstract class VitalSignsObject {
       }
     }
 
-    // Set vitaltype if present
+    // Set vitaltype if present (full URI key or short key)
     if (data['http://vital.ai/ontology/vital-core#vitaltype']) {
       this.vitaltype = data['http://vital.ai/ontology/vital-core#vitaltype'];
+    } else if (data['type']) {
+      this.vitaltype = data['type'];
+    }
+
+    // Set URI if present
+    if (data['URI']) {
+      this.URI = data['URI'];
     }
   }
 
@@ -129,7 +131,7 @@ export abstract class VitalSignsObject {
     
     // Add URI if present
     if (this.URI) {
-      map.set('@id', this.URI);
+      map.set('URI', this.URI);
     }
 
     // Get all property definitions including inherited ones
@@ -166,8 +168,8 @@ export abstract class VitalSignsObject {
     }
 
     // Set URI if present
-    if (map.has('@id')) {
-      this.URI = map.get('@id');
+    if (map.has('URI')) {
+      this.URI = map.get('URI');
     }
   }
 }

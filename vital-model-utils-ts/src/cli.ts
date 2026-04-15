@@ -55,7 +55,7 @@ program
   .description('Process a JSONL file containing VitalSigns objects')
   .argument('<jsonl-file>', 'Path to the JSONL file')
   .option('-s, --schema <schema-file>', 'Path to the VitalSigns schema file')
-  .option('-f, --format <format>', 'Input format: json-ld, vitalsigns, or auto', 'auto')
+  .option('-f, --format <format>', 'Input format: vitalsigns or instances', 'vitalsigns')
   .option('-o, --output <output-file>', 'Output file for processed data')
   .option('--stats', 'Show processing statistics')
   .action(async (jsonlFile: string, options: any) => {
@@ -83,16 +83,7 @@ program
       }
 
       const startTime = Date.now();
-      let graphInstance;
-
-      if (options.format === 'json-ld') {
-        graphInstance = await VitalSignsJsonlProcessor.processJsonLDFile(jsonlFile);
-      } else {
-        graphInstance = await VitalSignsJsonlProcessor.processFileWithAutoDetection(
-          jsonlFile, 
-          options.format
-        );
-      }
+      const graphInstance = await VitalSignsJsonlProcessor.processInstancesFile(jsonlFile);
 
       const processingTime = Date.now() - startTime;
 
